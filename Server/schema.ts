@@ -31,18 +31,19 @@ const model = require("./model.ts");
 //User Type
 const UserType = new GraphQLObjectType({
   name: "Users",
-  fields: () => ({
+  fields: {
     // id: { type: GraphQLString },
     username: { type: GraphQLNonNull(GraphQLString) },
-    // password: { type: GraphQLNonNull(GraphQLString) },
+    password: { type: GraphQLNonNull(GraphQLString) },
     jobs: { type: GraphQLString },
-  }),
+  },
 });
 
 // User Root Query
 const UserQuery = new GraphQLObjectType({
   name: "UserQueryType",
-  fields: () => ({
+  description: "Query users",
+  fields: {
     user: {
       type: UserType,
       args: {
@@ -50,47 +51,52 @@ const UserQuery = new GraphQLObjectType({
         username: { type: GraphQLString },
       },
       resolve: (parentValue, args) => {
+        console.log("args", args);
+        const { username } = args;
         const queryText = `SELECT * from users WHERE username=$1`;
         return model
           .query(queryText, [username])
-          .then((data) => data.rows[0])
+          .then((data) => /*data.rows[0]*/ console.log(data))
           .catch((err) => console.log(err));
       },
     },
     users: {
       type: GraphQLList(UserType),
-      resolve: () =>
-        model
+      description: "query all users",
+      resolve: () => {
+        console.log("hi");
+        return model
           .query(`SELECT * FROM users`)
           .then((data) => data.rows)
-          .catch((err) => console.log(err)),
-    },
-  }),
-});
-
-//User mutation
-const UserMutation = new GraphQLObjectType({
-  name: "UserMutation",
-  fields: () => ({
-    addUser: {
-      type: UserType,
-      args: {
-        username: { type: GraphQLNonNull(GraphQLString) },
-        password: { type: GraphQLNonNull(GraphQLString) },
-        jobs: { type: GraphQLString },
-      },
-      resolve: async (parent, args) => {
-        const { username, password, jobs } = args;
-        const hashedPass = await bcrypt.hash(password, 10);
-        const queryText = `INSERT INTO users (username, password, jobs) VALUES ($1, $2, $3)`;
-        model
-          .query(queryText, [username, password, jobs])
-          .then((data) => console.log(data))
           .catch((err) => console.log(err));
       },
     },
-  }),
+  },
 });
+
+//User mutation
+// const UserMutation = new GraphQLObjectType({
+//   name: "UserMutation",
+//   fields: () => ({
+//     addUser: {
+//       type: UserType,
+//       args: {
+//         username: { type: GraphQLNonNull(GraphQLString) },
+//         password: { type: GraphQLNonNull(GraphQLString) },
+//         jobs: { type: GraphQLString },
+//       },
+//       resolve: async (parent, args) => {
+//         const { username, password, jobs } = args;
+//         const hashedPass = await bcrypt.hash(password, 10);
+//         const queryText = `INSERT INTO users (username, password, jobs) VALUES ($1, $2, $3)`;
+//         model
+//           .query(queryText, [username, password, jobs])
+//           .then((data) => console.log(data))
+//           .catch((err) => console.log(err));
+//       },
+//     },
+//   }),
+// });
 
 //Root Query
 // const RootQuery = new GraphQLObjectType({
@@ -173,7 +179,7 @@ const UserMutation = new GraphQLObjectType({
 
 const schema = new GraphQLSchema({
   query: UserQuery,
-  mutation: UserMutation,
+  // mutation: UserMutation,
 });
 
 module.exports = { schema };
