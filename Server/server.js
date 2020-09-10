@@ -1,20 +1,25 @@
 const express = require("express");
-const path = require("path");
 const app = express();
-const cookie = require("cookie-parser");
+const {graphqlHTTP} = require('express-graphql')
+const {buildSchema} = require('graphql')
 
-app.use(express.json());
-app.use(express.urlencoded());
-app.use(cookieParser());
+const PORT = process.env.port || 3000
 
-app.get("/log", (req, res) => {
-	res.send("yo");
-});
+const schema = buildSchema(`
+	type Query {
+		hello: String
+	}
+`);
 
-app.use("*", (req, res) => {
-	res.sendStatus(404);
-});
+const root = {
+	hello: () => {
+		return 'hello world!'
+	}
+}
 
-app.use((err, req, res, next) => {
-	console.log("err", err);
-});
+app.use('/graphql', graphqlHTTP({schema:schema, rootValue:root, graphiql: true}))
+
+app.listen(PORT, () => {
+	console.log(`Listening on port ${PORT}`)
+})
+console.log('run graphql server')
